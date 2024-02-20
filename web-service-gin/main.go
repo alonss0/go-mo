@@ -8,7 +8,7 @@ import (
 
 // chapeau represents a hat in Dofus.
 type chapeau struct {
-	ID           uint   `json:"id"`           // Chapeau ID
+	ID           string `json:"id"`           // Chapeau ID
 	ItemLevel    uint8  `json:"itemLevel"`    // Level of the hat (1-200)
 	Name         string `json:"name"`         // Name of the hat
 	Critical     uint8  `json:"critical"`     // Critical hit rate of the hat
@@ -25,7 +25,7 @@ type chapeau struct {
 
 var chapeaux = []chapeau{
 	{
-		ID:           1,
+		ID:           "1",
 		ItemLevel:    200,
 		Name:         "Máscara trithona",
 		Critical:     4,
@@ -40,7 +40,7 @@ var chapeaux = []chapeau{
 		Vitalite:     400,
 	},
 	{
-		ID:           2,
+		ID:           "2",
 		ItemLevel:    172,
 		Name:         "Sombrero de buen aporte",
 		Critical:     6,
@@ -55,7 +55,7 @@ var chapeaux = []chapeau{
 		Vitalite:     300,
 	},
 	{
-		ID:           3,
+		ID:           "3",
 		ItemLevel:    196,
 		Name:         "El Kim",
 		Critical:     7,
@@ -71,14 +71,46 @@ var chapeaux = []chapeau{
 	},
 }
 
+func main() {
+	router := gin.Default()
+	router.GET("/chapeaux", getChapeaux)
+	router.GET("/chapeaux/:id", getChapeauByID)
+	router.POST("/chapeaux", postChapeaux)
+	router.Run("localhost:8080")
+}
+
 // get chapeaux in JSON format
 func getChapeaux(c *gin.Context) {
 	c.IndentedJSON(http.StatusOK, chapeaux)
 }
 
-func main() {
-	router := gin.Default()
-	router.GET("/chapeaux", getChapeaux)
+// postChapeaux adds a chapeau from JSON received in the request body.
+func postChapeaux(c *gin.Context) {
+	var newChapeau chapeau
 
-	router.Run("localhost:8080")
+	// Call BindJSON to bind the received JSON to
+	// newChapeau.
+	if err := c.BindJSON(&newChapeau); err != nil {
+		return
+	}
+
+	// Add the new chapeau to the slice.
+	chapeaux = append(chapeaux, newChapeau)
+	c.IndentedJSON(http.StatusCreated, newChapeau)
+}
+
+// getChapeauByID locates the chapeau whose ID value matches the id
+// parameter sent by the client, then returns that chapeau as a response.
+func getChapeauByID(c *gin.Context) {
+	id := c.Param("id")
+
+	// Loop over the list of chapeaux, looking for
+	// a chapeau whose ID value matches the parameter.
+	for _, a := range chapeaux {
+		if a.ID == id {
+			c.IndentedJSON(http.StatusOK, a)
+			return
+		}
+	}
+	c.IndentedJSON(http.StatusNotFound, gin.H{"message": "chapeau not found"})
 }
